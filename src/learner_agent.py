@@ -83,52 +83,20 @@ class LearnerAgent:
 
     def get_initial_greeting(self) -> str:
         """Get the initial greeting from the agent."""
+        # Use static greetings to ensure consistent language
+        # LLM-generated greetings can be unpredictable with language mixing
         if self.language == "es":
-            initial_prompt = f"""Estás conociendo a un estudiante que te va a enseñar sobre {self.topic_name}.
-Preséntate con entusiasmo en ESPAÑOL. Dile:
-1. Que estás emocionado de aprender de él/ella
-2. Que no sabes absolutamente nada sobre {self.topic_name}
-3. Que estás listo para que te enseñe
-
-Mantén la respuesta CORTA (2-3 oraciones). Sé cálido y alentador.
-IMPORTANTE: Responde 100% en español, sin palabras en inglés."""
+            greeting = f"¡Hola! Estoy muy emocionado de aprender sobre {self.topic_name}. Tengo que admitir que no sé absolutamente nada del tema, así que empiezo completamente en blanco. ¡Estoy listo y ansioso por absorber todo lo que puedas enseñarme!"
         else:
-            initial_prompt = f"""You are meeting a student who will teach you about {self.topic_name}.
-Introduce yourself enthusiastically in ENGLISH. Tell them:
-1. You're excited to learn from them
-2. You know absolutely nothing about {self.topic_name}
-3. You're ready for them to teach you
+            greeting = f"Hello! I'm absolutely thrilled to meet you and learn about {self.topic_name}! I have to admit, I know practically nothing about this topic, so I'm starting completely fresh. I'm so ready and eager to soak up everything you can teach me - please share away!"
 
-Keep it SHORT (2-3 sentences). Be warm and encouraging.
-IMPORTANT: Respond 100% in English, no Spanish words."""
+        # Add greeting to conversation history
+        self.conversation_history.append({
+            "role": "assistant",
+            "content": greeting
+        })
 
-        try:
-            response = self.client.messages.create(
-                model=self.model,
-                max_tokens=256,
-                temperature=0.8,
-                messages=[
-                    {"role": "user", "content": initial_prompt}
-                ]
-            )
-
-            greeting = response.content[0].text
-
-            # Add greeting to conversation history
-            self.conversation_history.append({
-                "role": "assistant",
-                "content": greeting
-            })
-
-            return greeting
-
-        except Exception as e:
-            print(f"[ERROR] Failed to generate greeting: {e}")
-            # Fallback greeting based on language
-            if self.language == "es":
-                return f"¡Hola! Soy tu estudiante y estoy listo para aprender. Me dijeron que tú sabes mucho sobre {self.topic_name}. ¿Me puedes enseñar? ¡No sé nada del tema!"
-            else:
-                return f"Hi! I'm your student and I'm ready to learn. I heard you know a lot about {self.topic_name}. Can you teach me? I don't know anything about it!"
+        return greeting
 
     def reset(self):
         """Reset the conversation history."""

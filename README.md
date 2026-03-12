@@ -45,7 +45,7 @@ This is based on the **protégé effect**: teaching others is one of the most ef
 ### Step 1: Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/learner-agent-core.git
+git clone https://github.com/elaval/learner-agent-core.git
 cd learner-agent-core
 ```
 

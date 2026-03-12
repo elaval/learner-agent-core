@@ -41,8 +41,10 @@ Unlike traditional AI tutors that already "know everything," this agent starts w
 | **Diagnostics** | Fuzzy match vs. curriculum reference | None |
 | **Challenge Mode** | Teams ask questions to rival agents | None |
 | **Database** | Multi-table (teams, topics, sessions, challenges) | Single table (sessions) |
-| **i18n** | Spanish + English with language enforcement | English-only prompts |
+| **i18n** | Spanish + English with language enforcement | Spanish + English agent responses |
 | **Admin** | Team management, session history, comparison | Basic session list |
+| **Token Tracking** | Not implemented | Full tracking with cost estimation |
+| **Session Continuation** | Not implemented | Full conversation history restoration |
 
 **What Stays the Same:**
 
@@ -104,18 +106,21 @@ learner-agent-core/
 CREATE TABLE sessions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     topic_name TEXT NOT NULL,              -- Free-form topic
+    language TEXT DEFAULT 'en',            -- Agent response language
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     completed_at TIMESTAMP,
     total_turns INTEGER DEFAULT 0,
     duration_minutes REAL,
     concepts_extracted INTEGER DEFAULT 0,
     relationships_extracted INTEGER DEFAULT 0,
+    tokens_input INTEGER DEFAULT 0,        -- Total input tokens
+    tokens_output INTEGER DEFAULT 0,       -- Total output tokens
     knowledge_graph_json TEXT,             -- JSON blob
     conversation_history_json TEXT         -- JSON array
 );
 ```
 
-**No foreign keys, no teams, no topics table, no challenges.**
+**No foreign keys, no teams, no topics table, no challenges. Includes full token tracking.**
 
 ### API Endpoints (4 Total)
 
@@ -222,10 +227,10 @@ WebSocket /ws/teach/{id}       # Real-time teaching
 
 ### 1. Session Creation
 
-User clicks "Create New Agent" → enters topic name → `POST /api/sessions`
+User clicks "Create New Agent" → enters topic name + selects language → `POST /api/sessions`
 
 ```python
-session_id = db.create_session(topic_name="Pizza Recipe")
+session_id = db.create_session(topic_name="Pizza Recipe", language="en")
 # Returns session ID, connects to WebSocket
 ```
 
@@ -233,9 +238,13 @@ session_id = db.create_session(topic_name="Pizza Recipe")
 
 ```python
 # Server side (websocket_handler.py)
-knowledge_graph = KnowledgeGraph(topic_name)
-learner_agent = LearnerAgent(api_key, model)
-knowledge_builder = KnowledgeBuilder(api_key, extractor_model)
+knowledge_graph = KnowledgeGraph()
+learner_agent = LearnerAgent(client=client, topic_name=topic_name, language=language)
+knowledge_builder = KnowledgeBuilder(client=client, topic_name=topic_name)
+
+# Token tracking
+total_tokens_input = 0
+total_tokens_output = 0
 
 while connected:
     # Receive user message
@@ -243,20 +252,21 @@ while connected:
 
     # Extract knowledge (async, doesn't block)
     asyncio.create_task(
-        knowledge_builder.extract_and_update(
+        knowledge_builder.process_student_message(
             student_message,
-            knowledge_graph,
-            topic_name
+            knowledge_graph
         )
     )
 
-    # Generate agent response
-    system_prompt = get_learner_system_prompt(topic_name, turn_count, concepts)
-    agent_response = await learner_agent.generate_response(
-        message=student_message,
-        system_prompt=system_prompt,
-        conversation_history=[...]
+    # Generate agent response (returns tokens)
+    agent_response, input_tokens, output_tokens = learner_agent.generate_response(
+        student_message=student_message,
+        knowledge_graph=knowledge_graph
     )
+
+    # Accumulate tokens
+    total_tokens_input += input_tokens
+    total_tokens_output += output_tokens
 
     # Send response
     await websocket.send_json({
@@ -264,9 +274,14 @@ while connected:
         "content": agent_response
     })
 
-    # Auto-save every 5 turns
+    # Auto-save every 5 turns (includes token counts)
     if turn_count % 5 == 0:
-        db.update_session(session_id, knowledge_graph_json=...)
+        db.update_session(
+            session_id,
+            tokens_input=total_tokens_input + knowledge_builder.total_input_tokens,
+            tokens_output=total_tokens_output + knowledge_builder.total_output_tokens,
+            knowledge_graph_json=...
+        )
 ```
 
 ### 3. Knowledge Extraction (Background)
@@ -459,7 +474,7 @@ Docker polls `GET /health` every 30 seconds
 2. **No curriculum validation** - Can't compare against reference curriculum
 3. **No challenge mode** - Can't test agent with hard questions
 4. **Basic UI** - Minimal styling, no graphs/charts
-5. **English-only prompts** - No i18n (though agent will respond in user's language)
+5. **Limited language support** - Only English and Spanish agent responses (UI in English)
 6. **No session sharing** - Can't export/import sessions
 7. **No voice input** - Text-only
 
@@ -471,13 +486,17 @@ Docker polls `GET /health` every 30 seconds
 
 Potential enhancements without breaking simplicity:
 
+- [x] **Token usage tracking** (completed - tracks all API calls with cost estimation) ✅
+- [x] **Session continuation** (completed - full conversation history restoration) ✅
+- [x] **Multi-language agent responses** (completed - English/Spanish) ✅
 - [ ] **Export knowledge graph** as JSON/Markdown
 - [ ] **Topic templates** (pre-fill some concepts for common topics)
 - [ ] **Session sharing** (generate shareable link)
 - [ ] **Voice input/output** (Whisper API + TTS)
 - [ ] **Graph visualization** (D3.js force-directed graph)
-- [ ] **Multi-language UI** (Spanish, Portuguese)
+- [ ] **Full UI localization** (Spanish, Portuguese UI translations)
 - [ ] **Assessment questions** (LLM generates quiz from graph)
+- [ ] **More languages** (Portuguese, French, German, etc.)
 
 ---
 
@@ -541,10 +560,28 @@ response = await agent.generate_response(
 
 ```bash
 python3.12 -m venv venv
-source venv/bin/activate
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -e .
-export ANTHROPIC_API_KEY=your_key
+export ANTHROPIC_API_KEY=your_key  # On Windows: set ANTHROPIC_API_KEY=your_key
 uvicorn src.web.api:app --reload --host 0.0.0.0 --port 8000
+```
+
+### Docker Compose Commands
+
+**Note:** Docker Desktop uses Compose V2 (space) by default. Older standalone installations use V1 (hyphen).
+
+```bash
+# Docker Desktop (macOS, Windows, Linux with Docker Desktop)
+docker compose up
+docker compose down
+docker compose build
+docker compose logs -f
+
+# Older Docker Compose V1 (standalone installation)
+docker-compose up
+docker-compose down
+docker-compose build
+docker-compose logs -f
 ```
 
 ### Testing

@@ -28,6 +28,8 @@ This is based on the **protégé effect**: teaching others is one of the most ef
 - ✅ **Knowledge Graph Visualization** - See concepts and relationships
 - ✅ **Assessment Mode** - Agent demonstrates what it learned
 - ✅ **Session Persistence** - SQLite database, continue later
+- ✅ **Multi-language Support** - Agent responds in English or Spanish
+- ✅ **Token Usage Tracking** - Monitor API costs in real-time
 - ✅ **Docker Containerized** - One-command deployment
 - ✅ **Free-form Topics** - Teach about anything
 
@@ -62,7 +64,13 @@ ANTHROPIC_API_KEY=sk-ant-api03-xxxxxxxxxxxx
 
 ### Step 3: Start with Docker
 
+**Note:** Docker Compose V2 (included with Docker Desktop) uses a space instead of a hyphen:
+
 ```bash
+# For Docker Desktop (macOS, Windows, Linux with Docker Desktop)
+docker compose up
+
+# For older Docker Compose V1 (if you have it installed separately)
 docker-compose up
 ```
 
@@ -78,7 +86,8 @@ That's it! 🎉
 
 1. Click **"+ Create New Agent"**
 2. Enter a topic (e.g., "The Water Cycle")
-3. Click **"Start Teaching"**
+3. Select language (English or Spanish) - the agent will respond in this language
+4. Click **"Start Teaching"**
 
 ### Teach the Agent
 
@@ -102,13 +111,23 @@ Agent: Ah! So evaporation is when water goes up? What happens next?
 - **Type `/done`** - Finish teaching and generate assessment
 - **Type `/quit`** - Save progress and exit
 
+### Continue Previous Sessions
+
+You can resume any previous teaching session:
+
+1. Click **"View All Sessions"** on the home page
+2. Click **"Continue Teaching"** on any session
+3. Your conversation history and knowledge graph will be restored
+4. Keep teaching from where you left off
+
 ### Assessment
 
 When you type `/done`, the agent will:
 
 1. Explain the topic back to you using **only** what you taught
-2. Show stats (concepts learned, relationships extracted)
-3. Display the complete knowledge graph
+2. Show stats (concepts learned, relationships extracted, evidence collected)
+3. Display **token usage and estimated cost**
+4. Show the complete knowledge graph
 
 If the agent can't explain something, **you didn't teach it!**
 
@@ -143,17 +162,21 @@ If the agent can't explain something, **you didn't teach it!**
 CREATE TABLE sessions (
     id INTEGER PRIMARY KEY,
     topic_name TEXT,
+    language TEXT DEFAULT 'en',
     knowledge_graph_json TEXT,  -- JSON of concepts/relationships
     conversation_history_json TEXT,
     total_turns INTEGER,
     concepts_extracted INTEGER,
     relationships_extracted INTEGER,
+    tokens_input INTEGER DEFAULT 0,
+    tokens_output INTEGER DEFAULT 0,
+    duration_minutes REAL,
     created_at TIMESTAMP,
     completed_at TIMESTAMP
 );
 ```
 
-No teams, no challenges, no curriculum references — just teaching sessions.
+No teams, no challenges, no curriculum references — just teaching sessions with full token tracking.
 
 ---
 
@@ -182,34 +205,36 @@ No teams, no challenges, no curriculum references — just teaching sessions.
 
 ## 🐳 Docker Details
 
+**Important:** All commands below use `docker compose` (with space) for Docker Compose V2. If you're using V1, replace with `docker-compose` (with hyphen).
+
 ### Build Image
 
 ```bash
-docker-compose build
+docker compose build
 ```
 
 ### Run Container
 
 ```bash
-docker-compose up
+docker compose up
 ```
 
 ### Run in Background
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 ### View Logs
 
 ```bash
-docker-compose logs -f
+docker compose logs -f
 ```
 
 ### Stop Container
 
 ```bash
-docker-compose down
+docker compose down
 ```
 
 ### Data Persistence
@@ -314,17 +339,32 @@ Using Haiku for extraction saves ~70% on API costs while maintaining quality.
 
 ---
 
-## 💰 Cost Estimate
+## 💰 Cost Estimate & Token Tracking
 
-Typical 20-turn teaching session:
+The application automatically tracks token usage for every session and displays the estimated cost at the end.
 
-- **Learner Agent**: 20 calls × ~$0.005 = **$0.10**
-- **Knowledge Extractor**: 20 calls × ~$0.001 = **$0.02**
-- **Assessment**: 1 call × ~$0.01 = **$0.01**
+**Typical 20-turn teaching session:**
 
-**Total per session: ~$0.13**
+| Component | Usage | Estimated Cost |
+|-----------|-------|----------------|
+| Learner Agent | 20 calls | ~$0.10 |
+| Knowledge Extractor | 20 calls | ~$0.02 |
+| Assessment | 1 call | ~$0.01 |
+| **Total per session** | | **~$0.13** |
 
-For 100 sessions: ~$13 USD
+**For 100 sessions: ~$13 USD**
+
+**Token Tracking Features:**
+- Real-time tracking of input/output tokens
+- Cumulative token counts saved per session
+- Cost estimation displayed in assessment
+- Helps you monitor API usage and budget
+
+**Pricing Details:**
+- Claude Sonnet 4: ~$3/MTok input, ~$15/MTok output
+- Claude Haiku 4.5: ~$0.80/MTok input, ~$4/MTok output
+
+Using Haiku for knowledge extraction saves ~70% on API costs while maintaining quality.
 
 ---
 
@@ -385,12 +425,16 @@ This is a minimal MVP. Contributions welcome!
 
 ### Ideas for Extensions
 
+- [x] Multi-language support (English/Spanish) ✅
+- [x] Token usage tracking ✅
+- [x] Session continuation ✅
 - [ ] Multi-user support (teachers assign topics to students)
 - [ ] Export knowledge graph as JSON/Markdown
 - [ ] Voice input/output (Whisper API integration)
 - [ ] Comparison mode (diff two knowledge graphs)
 - [ ] Curriculum validation (fuzzy match against reference curriculum)
 - [ ] Challenge mode (ask hard questions to agent)
+- [ ] More language support (Portuguese, French, etc.)
 
 ### Development Setup
 

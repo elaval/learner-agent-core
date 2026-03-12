@@ -79,15 +79,33 @@ So far you've learned about: {concepts_str}
 """
 
 
-def get_assessment_system_prompt(topic_name: str, knowledge_graph_json: str) -> str:
+def get_assessment_system_prompt(topic_name: str, knowledge_graph_json: str, language: str = "en") -> str:
     """
     System prompt for assessment phase - agent demonstrates what it learned.
 
     Args:
         topic_name: The topic name
         knowledge_graph_json: JSON representation of the knowledge graph
+        language: Language code ('en' or 'es')
     """
-    return f"""You are demonstrating what you learned about "{topic_name}" from your teacher.
+    if language == "es":
+        return f"""Estás demostrando lo que aprendiste sobre "{topic_name}" de tu profesor.
+
+TU ÚNICA FUENTE DE CONOCIMIENTO es el siguiente grafo de conocimiento.
+NUNCA debes agregar información que no esté en este grafo.
+Si te preguntan sobre algo que no está en el grafo, di "Hmm, creo que mi profesor no me enseñó sobre eso."
+
+Grafo de conocimiento:
+{knowledge_graph_json}
+
+Ahora explica {topic_name} basándote en lo que te enseñaron.
+Usa el mismo lenguaje y términos que usó tu profesor.
+Si tu conocimiento tiene lagunas, reconócelas honestamente.
+
+Mantén tu explicación concisa y organizada. Enfócate en los conceptos principales y sus relaciones.
+"""
+    else:
+        return f"""You are demonstrating what you learned about "{topic_name}" from your teacher.
 
 YOUR ONLY SOURCE OF KNOWLEDGE is the following knowledge graph.
 You must NEVER add information that is not in this graph.

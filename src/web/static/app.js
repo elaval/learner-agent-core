@@ -8,7 +8,10 @@ let websocket = null;
 
 // ===== INITIALIZATION =====
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    // Initialize i18n
+    await i18n.init();
+
     loadStats();
     showLanding();
 });
@@ -91,14 +94,14 @@ async function createAgent(event) {
 
 async function loadSessions() {
     const listContainer = document.getElementById('sessions-list');
-    listContainer.innerHTML = '<p class="loading">Loading sessions...</p>';
+    listContainer.innerHTML = `<p class="loading">${i18n.t('sessions.loading')}</p>`;
 
     try {
         const response = await fetch(`${API_BASE}/api/sessions?limit=50`);
         const sessions = await response.json();
 
         if (sessions.length === 0) {
-            listContainer.innerHTML = '<p class="loading">No sessions yet. Create your first agent!</p>';
+            listContainer.innerHTML = `<p class="loading">${i18n.t('sessions.empty')}</p>`;
             return;
         }
 
@@ -110,21 +113,25 @@ async function loadSessions() {
 
             const completed = session.completed_at ? '✅' : '🔄';
             const date = new Date(session.created_at).toLocaleDateString();
+            const statusText = session.completed_at ? i18n.t('sessions.completed') : i18n.t('sessions.inProgress');
+            const turnsText = i18n.t('sessions.meta.turns');
+            const conceptsText = i18n.t('sessions.meta.concepts');
 
             card.innerHTML = `
                 <div class="session-info">
-                    <h3>${completed} ${session.topic_name}</h3>
+                    <h3>${completed} ${escapeHtml(session.topic_name)}</h3>
                     <div class="session-meta">
                         <span>📅 ${date}</span>
-                        <span>💬 ${session.total_turns} turns</span>
-                        <span>🧠 ${session.concepts_extracted} concepts</span>
+                        <span>💬 ${session.total_turns} ${turnsText}</span>
+                        <span>🧠 ${session.concepts_extracted} ${conceptsText}</span>
+                        <span style="color: ${session.completed_at ? '#16a34a' : '#ea580c'};">● ${statusText}</span>
                     </div>
                 </div>
                 <div class="session-actions">
                     <button class="btn btn-secondary" onclick="continueSession(${session.id})">
-                        ${session.completed_at ? 'View' : 'Continue'}
+                        ${i18n.t('sessions.continueButton')}
                     </button>
-                    <button class="btn-command" onclick="deleteSession(${session.id})">
+                    <button class="btn-command" onclick="deleteSession(${session.id})" title="${i18n.t('sessions.deleteButton')}">
                         🗑️
                     </button>
                 </div>
@@ -154,7 +161,7 @@ async function continueSession(sessionId) {
 }
 
 async function deleteSession(sessionId) {
-    if (!confirm('Delete this session? This cannot be undone.')) {
+    if (!confirm(i18n.t('sessions.deleteConfirm'))) {
         return;
     }
 
@@ -180,9 +187,9 @@ function startTeachingSession(session) {
     showView('teaching-view');
 
     document.getElementById('teaching-topic').textContent = session.topic_name;
-    document.getElementById('stat-turns').textContent = `${session.total_turns} turns`;
-    document.getElementById('stat-concepts').textContent = `${session.concepts_extracted} concepts`;
-    document.getElementById('stat-relationships').textContent = `${session.relationships_extracted} relationships`;
+    document.getElementById('stat-turns').innerHTML = `${session.total_turns} <span data-i18n="teaching.stats.turns">${i18n.t('teaching.stats.turns')}</span>`;
+    document.getElementById('stat-concepts').innerHTML = `${session.concepts_extracted} <span data-i18n="teaching.stats.concepts">${i18n.t('teaching.stats.concepts')}</span>`;
+    document.getElementById('stat-relationships').innerHTML = `${session.relationships_extracted} <span data-i18n="teaching.stats.relationships">${i18n.t('teaching.stats.relationships')}</span>`;
 
     // Clear chat
     document.getElementById('chat-messages').innerHTML = '';
@@ -200,7 +207,6 @@ function connectWebSocket(sessionId) {
 
     websocket.onopen = () => {
         console.log('WebSocket connected');
-        addStatusMessage('Connected to teaching session');
     };
 
     websocket.onmessage = (event) => {
@@ -210,12 +216,12 @@ function connectWebSocket(sessionId) {
 
     websocket.onerror = (error) => {
         console.error('WebSocket error:', error);
-        addStatusMessage('Connection error');
+        addStatusMessage(i18n.t('status.error', {message: 'Connection error'}));
     };
 
     websocket.onclose = () => {
         console.log('WebSocket closed');
-        addStatusMessage('Session ended');
+        addStatusMessage(i18n.t('status.sessionEnded'));
     };
 }
 
@@ -225,8 +231,34 @@ function handleWebSocketMessage(data) {
             addAgentMessage(data.content);
             break;
 
+        case 'student_message_history':
+            addStudentMessage(data.content);
+            break;
+
         case 'status':
-            addStatusMessage(data.content);
+            // Translate common status messages
+            let statusMessage = data.content;
+
+            // Match patterns and translate
+            if (statusMessage.startsWith('Connected to teaching session for')) {
+                const topic = statusMessage.match(/'([^']+)'/)?.[1];
+                if (topic) {
+                    statusMessage = i18n.t('status.connected', {topic});
+                }
+            } else if (statusMessage.startsWith('Resuming session with')) {
+                const turns = statusMessage.match(/(\d+)/)?.[1];
+                if (turns) {
+                    statusMessage = i18n.t('status.resuming', {turns});
+                }
+            } else if (statusMessage.includes('Session saved')) {
+                statusMessage = i18n.t('status.saved');
+            } else if (statusMessage.includes('Generating assessment')) {
+                statusMessage = i18n.t('status.generating');
+            } else if (statusMessage.includes('Session completed')) {
+                statusMessage = i18n.t('status.completed');
+            }
+
+            addStatusMessage(statusMessage);
             break;
 
         case 'stats_update':
@@ -242,7 +274,7 @@ function handleWebSocketMessage(data) {
             break;
 
         case 'error':
-            addStatusMessage(`Error: ${data.content}`);
+            addStatusMessage(i18n.t('status.error', {message: data.content}));
             break;
     }
 }
@@ -256,7 +288,7 @@ function addAgentMessage(content) {
     const messageDiv = document.createElement('div');
     messageDiv.className = 'message message-agent';
     messageDiv.innerHTML = `
-        <div class="message-role">Agent</div>
+        <div class="message-role">${i18n.t('teaching.messageRoles.agent')}</div>
         <div class="message-content">${escapeHtml(content)}</div>
     `;
 
@@ -270,7 +302,7 @@ function addStudentMessage(content) {
     const messageDiv = document.createElement('div');
     messageDiv.className = 'message message-student';
     messageDiv.innerHTML = `
-        <div class="message-role">You</div>
+        <div class="message-role">${i18n.t('teaching.messageRoles.you')}</div>
         <div class="message-content">${escapeHtml(content)}</div>
     `;
 
@@ -298,7 +330,7 @@ function showTypingIndicator() {
     indicator.id = 'typing-indicator';
     indicator.className = 'message message-agent';
     indicator.innerHTML = `
-        <div class="message-role">Agent</div>
+        <div class="message-role">${i18n.t('teaching.messageRoles.agent')}</div>
         <div class="typing-indicator">
             <span></span><span></span><span></span>
         </div>
@@ -316,8 +348,8 @@ function hideTypingIndicator() {
 }
 
 function updateStats(stats) {
-    document.getElementById('stat-concepts').textContent = `${stats.concepts || 0} concepts`;
-    document.getElementById('stat-relationships').textContent = `${stats.relationships || 0} relationships`;
+    document.getElementById('stat-concepts').innerHTML = `${stats.concepts || 0} <span data-i18n="teaching.stats.concepts">${i18n.t('teaching.stats.concepts')}</span>`;
+    document.getElementById('stat-relationships').innerHTML = `${stats.relationships || 0} <span data-i18n="teaching.stats.relationships">${i18n.t('teaching.stats.relationships')}</span>`;
 }
 
 // ===== CHAT INPUT =====
@@ -354,9 +386,9 @@ function sendCommand(command) {
     }));
 
     if (command === '/graph') {
-        addStatusMessage('Generating knowledge graph...');
+        addStatusMessage(i18n.t('status.generatingGraph'));
     } else if (command === '/done') {
-        addStatusMessage('Finalizing session and generating assessment...');
+        addStatusMessage(i18n.t('status.finalizingSession'));
     }
 }
 
@@ -382,7 +414,7 @@ function showKnowledgeGraph(graphData) {
     const modal = document.getElementById('graph-modal');
     const content = document.getElementById('graph-content');
 
-    let html = '<h4>Concepts</h4>';
+    let html = `<h4>${i18n.t('graph.concepts')}</h4>`;
     html += '<ul class="concept-list">';
 
     for (const [name, concept] of Object.entries(graphData.concepts || {})) {
@@ -397,7 +429,7 @@ function showKnowledgeGraph(graphData) {
     html += '</ul>';
 
     if (graphData.relationships && graphData.relationships.length > 0) {
-        html += '<h4 style="margin-top: 1.5rem;">Relationships</h4>';
+        html += `<h4 style="margin-top: 1.5rem;">${i18n.t('graph.relationships')}</h4>`;
         html += '<div class="relationships-list">';
 
         graphData.relationships.forEach(rel => {
@@ -425,7 +457,7 @@ function showAssessment(assessmentData) {
 
     let html = `
         <div style="background: #eff6ff; padding: 1.5rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
-            <h4 style="color: #2563eb; margin-bottom: 1rem;">What the Agent Learned</h4>
+            <h4 style="color: #2563eb; margin-bottom: 1rem;">${i18n.t('assessment.whatLearned')}</h4>
             <p style="white-space: pre-wrap;">${escapeHtml(assessmentData.assessment)}</p>
         </div>
     `;
@@ -434,18 +466,46 @@ function showAssessment(assessmentData) {
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-value">${assessmentData.stats.concepts || 0}</div>
-                <div class="stat-label">Concepts Learned</div>
+                <div class="stat-label">${i18n.t('assessment.stats.conceptsLearned')}</div>
             </div>
             <div class="stat-card">
                 <div class="stat-value">${assessmentData.stats.relationships || 0}</div>
-                <div class="stat-label">Relationships</div>
+                <div class="stat-label">${i18n.t('assessment.stats.relationships')}</div>
             </div>
             <div class="stat-card">
                 <div class="stat-value">${assessmentData.stats.evidence || 0}</div>
-                <div class="stat-label">Evidence</div>
+                <div class="stat-label">${i18n.t('assessment.stats.evidence')}</div>
             </div>
         </div>
     `;
+
+    // Add token usage section if available
+    if (assessmentData.tokens) {
+        const estimatedCost = (assessmentData.tokens.total / 1000000 * 3).toFixed(4);
+        html += `
+            <div style="margin-top: 1.5rem; padding: 1.5rem; background: #f9fafb; border-radius: 0.5rem; border: 1px solid #e5e7eb;">
+                <h4 style="margin-bottom: 1rem; color: #374151;">${i18n.t('assessment.tokens.title')}</h4>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value">${assessmentData.tokens.input.toLocaleString()}</div>
+                        <div class="stat-label">${i18n.t('assessment.tokens.input')}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${assessmentData.tokens.output.toLocaleString()}</div>
+                        <div class="stat-label">${i18n.t('assessment.tokens.output')}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${assessmentData.tokens.total.toLocaleString()}</div>
+                        <div class="stat-label">${i18n.t('assessment.tokens.total')}</div>
+                    </div>
+                </div>
+                <p style="margin-top: 1rem; font-size: 0.875rem; color: #6b7280;">
+                    ${i18n.t('assessment.tokens.cost', {cost: estimatedCost})}
+                    <br><small>${i18n.t('assessment.tokens.costNote')}</small>
+                </p>
+            </div>
+        `;
+    }
 
     content.innerHTML = html;
     modal.classList.remove('hidden');
@@ -461,6 +521,12 @@ function showAssessment(assessmentData) {
 
 function closeModal(modalId) {
     document.getElementById(modalId).classList.add('hidden');
+}
+
+// ===== I18N =====
+
+async function changeUILanguage(lang) {
+    await i18n.changeLanguage(lang);
 }
 
 // ===== UTILITIES =====

@@ -1,0 +1,108 @@
+{
+  "app": {
+    "title": "Learner Agent Core",
+    "subtitle": "Enseña a una IA que comienza sin saber nada"
+  },
+  "nav": {
+    "home": "Inicio",
+    "sessions": "Ver Todas las Sesiones",
+    "language": "Idioma"
+  },
+  "landing": {
+    "hero": "Enseña a un Agente IA",
+    "description": "A diferencia de los tutores de IA tradicionales, este agente comienza sin conocimiento alguno. Tú le enseñas sobre cualquier tema, y aprende en tiempo real.",
+    "createButton": "+ Crear Nuevo Agente",
+    "sessionsButton": "📚 Ver Todas las Sesiones",
+    "statsTitle": "Estadísticas de la Plataforma",
+    "totalSessions": "Sesiones Totales",
+    "uniqueTopics": "Temas Únicos",
+    "avgConcepts": "Prom. Conceptos/Sesión",
+    "howItWorks": "Cómo Funciona",
+    "step1Title": "1. Crear Agente",
+    "step1Desc": "Elige cualquier tema",
+    "step2Title": "2. Enseñar",
+    "step2Desc": "El agente hace preguntas",
+    "step3Title": "3. Evaluar",
+    "step3Desc": "El agente explica lo aprendido"
+  },
+  "create": {
+    "title": "Crear Nuevo Agente de Aprendizaje",
+    "topicLabel": "¿Qué tema vas a enseñar?",
+    "topicPlaceholder": "ej., Cómo Hacer Pizza, Fotosíntesis, Mi Ciudad...",
+    "languageLabel": "Language / Idioma",
+    "languageHelp": "El agente responderá en este idioma",
+    "languageEn": "English",
+    "languageEs": "Español",
+    "startButton": "Comenzar a Enseñar",
+    "cancelButton": "← Volver"
+  },
+  "sessions": {
+    "title": "Tus Sesiones de Enseñanza",
+    "loading": "Cargando sesiones...",
+    "empty": "No hay sesiones aún. ¡Crea tu primer agente!",
+    "completed": "Evaluado",
+    "inProgress": "En Progreso",
+    "continueButton": "Continuar Enseñando",
+    "deleteButton": "Eliminar",
+    "deleteConfirm": "¿Eliminar esta sesión? Esto no se puede deshacer.",
+    "backButton": "← Volver al Inicio",
+    "meta": {
+      "turns": "turnos",
+      "concepts": "conceptos"
+    }
+  },
+  "teaching": {
+    "topic": "Tema",
+    "stats": {
+      "turns": "turnos",
+      "concepts": "conceptos",
+      "relationships": "relaciones"
+    },
+    "commands": {
+      "graph": "📊 Mostrar Grafo",
+      "done": "✅ Finalizar y Evaluar",
+      "quit": "💾 Guardar y Salir"
+    },
+    "inputPlaceholder": "Escribe tu mensaje o /graph, /done, /quit...",
+    "sendButton": "Enviar",
+    "messageRoles": {
+      "agent": "Agente",
+      "you": "Tú"
+    }
+  },
+  "graph": {
+    "title": "Grafo de Conocimiento",
+    "concepts": "Conceptos",
+    "relationships": "Relaciones",
+    "closeButton": "Cerrar"
+  },
+  "assessment": {
+    "title": "Evaluación de la Sesión",
+    "whatLearned": "Lo que Aprendió el Agente",
+    "stats": {
+      "conceptsLearned": "Conceptos Aprendidos",
+      "relationships": "Relaciones",
+      "evidence": "Evidencia"
+    },
+    "tokens": {
+      "title": "Uso de Tokens",
+      "input": "Tokens de Entrada",
+      "output": "Tokens de Salida",
+      "total": "Tokens Totales",
+      "cost": "Costo estimado: ${cost} USD",
+      "costNote": "(Aproximado basado en precios de la API de Claude)"
+    },
+    "closeButton": "Cerrar"
+  },
+  "status": {
+    "connected": "Conectado a la sesión de enseñanza para '{topic}'",
+    "resuming": "Reanudando sesión con {turns} turnos previos",
+    "saved": "Sesión guardada. ¡Adiós!",
+    "generating": "Generando evaluación...",
+    "generatingGraph": "Generando grafo de conocimiento...",
+    "finalizingSession": "Finalizando sesión y generando evaluación...",
+    "completed": "¡Sesión completada!",
+    "sessionEnded": "Sesión finalizada",
+    "error": "Error: {message}"
+  }
+}

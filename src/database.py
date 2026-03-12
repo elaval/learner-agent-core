@@ -46,6 +46,8 @@ def init_database() -> None:
             duration_minutes REAL,
             concepts_extracted INTEGER DEFAULT 0,
             relationships_extracted INTEGER DEFAULT 0,
+            tokens_input INTEGER DEFAULT 0,
+            tokens_output INTEGER DEFAULT 0,
             knowledge_graph_json TEXT,
             conversation_history_json TEXT
         )
@@ -57,6 +59,19 @@ def init_database() -> None:
         conn.commit()
     except sqlite3.OperationalError:
         # Column already exists
+        pass
+
+    # Add token tracking columns if they don't exist (migration)
+    try:
+        cursor.execute("ALTER TABLE sessions ADD COLUMN tokens_input INTEGER DEFAULT 0")
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass
+
+    try:
+        cursor.execute("ALTER TABLE sessions ADD COLUMN tokens_output INTEGER DEFAULT 0")
+        conn.commit()
+    except sqlite3.OperationalError:
         pass
 
     # Create index for topic searches
@@ -101,6 +116,8 @@ def update_session(
     duration_minutes: float = None,
     concepts_extracted: int = None,
     relationships_extracted: int = None,
+    tokens_input: int = None,
+    tokens_output: int = None,
     knowledge_graph_json: str = None,
     conversation_history_json: str = None,
     completed_at: str = None
@@ -114,6 +131,8 @@ def update_session(
         duration_minutes: Session duration
         concepts_extracted: Number of concepts extracted
         relationships_extracted: Number of relationships extracted
+        tokens_input: Total input tokens used
+        tokens_output: Total output tokens used
         knowledge_graph_json: JSON representation of knowledge graph
         conversation_history_json: JSON array of conversation messages
         completed_at: Completion timestamp (ISO format)
@@ -139,6 +158,14 @@ def update_session(
     if relationships_extracted is not None:
         updates.append("relationships_extracted = ?")
         params.append(relationships_extracted)
+
+    if tokens_input is not None:
+        updates.append("tokens_input = ?")
+        params.append(tokens_input)
+
+    if tokens_output is not None:
+        updates.append("tokens_output = ?")
+        params.append(tokens_output)
 
     if knowledge_graph_json is not None:
         updates.append("knowledge_graph_json = ?")

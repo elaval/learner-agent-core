@@ -2,7 +2,7 @@
 Learner Agent: The conversational AI that acts as a curious student.
 """
 
-from typing import List, Dict
+from typing import List, Dict, Tuple
 from anthropic import Anthropic
 
 from .knowledge_graph import KnowledgeGraph
@@ -31,7 +31,7 @@ class LearnerAgent:
             language=self.language
         )
 
-    def generate_response(self, student_message: str, knowledge_graph: KnowledgeGraph) -> str:
+    def generate_response(self, student_message: str, knowledge_graph: KnowledgeGraph) -> Tuple[str, int, int]:
         """
         Generate the learner agent's response to the student's message.
 
@@ -40,7 +40,7 @@ class LearnerAgent:
             knowledge_graph: Current state of knowledge (for context)
 
         Returns:
-            The agent's response
+            Tuple of (agent_response, input_tokens, output_tokens)
         """
         # Add student message to conversation history
         self.conversation_history.append({
@@ -63,6 +63,10 @@ class LearnerAgent:
 
             agent_response = response.content[0].text
 
+            # Extract token usage
+            input_tokens = response.usage.input_tokens
+            output_tokens = response.usage.output_tokens
+
             # Add agent response to conversation history
             self.conversation_history.append({
                 "role": "assistant",
@@ -71,11 +75,11 @@ class LearnerAgent:
 
             self.turn_count += 1
 
-            return agent_response
+            return agent_response, input_tokens, output_tokens
 
         except Exception as e:
             print(f"[ERROR] Failed to generate learner response: {e}")
-            return "Lo siento, tuve un problema. ¿Puedes repetir eso? / Sorry, I had a problem. Can you repeat that?"
+            return "Lo siento, tuve un problema. ¿Puedes repetir eso? / Sorry, I had a problem. Can you repeat that?", 0, 0
 
     def get_initial_greeting(self) -> str:
         """Get the initial greeting from the agent."""

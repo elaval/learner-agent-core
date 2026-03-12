@@ -17,6 +17,8 @@ class KnowledgeBuilder:
         self.client = client
         self.topic_name = topic_name
         self.model = "claude-haiku-4-5-20251001"
+        self.total_input_tokens = 0
+        self.total_output_tokens = 0
 
     def extract_from_message(self, student_message: str, knowledge_graph: KnowledgeGraph) -> Dict[str, Any]:
         """
@@ -44,6 +46,10 @@ class KnowledgeBuilder:
                     {"role": "user", "content": prompt}
                 ]
             )
+
+            # Extract token usage
+            self.total_input_tokens += response.usage.input_tokens
+            self.total_output_tokens += response.usage.output_tokens
 
             # Parse the JSON response
             response_text = response.content[0].text.strip()

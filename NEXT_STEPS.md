@@ -13,9 +13,12 @@ Your `learner-agent-core` repository is ready with:
 - ✅ Minimal web UI (single-page app)
 - ✅ Core learning modules (knowledge_graph, knowledge_builder, learner_agent)
 - ✅ SQLite database (local persistence)
-- ✅ Comprehensive README.md
+- ✅ Multi-language support (English/Spanish agent responses)
+- ✅ Token usage tracking with cost estimation
+- ✅ Session continuation with full conversation history
+- ✅ Comprehensive README.md and CLAUDE.md
 - ✅ MIT License
-- ✅ Git repository initialized with 3 commits
+- ✅ Git repository initialized with commits
 
 **Location:** `/Users/ernestolaval/Documents/Prototipos/learner-agent-core`
 
@@ -52,7 +55,8 @@ ANTHROPIC_API_KEY=sk-ant-api03-YOUR_ACTUAL_KEY_HERE
 
 ```bash
 # Build the Docker image
-docker-compose build
+# Note: Docker Desktop uses "docker compose" (space), not "docker-compose"
+docker compose build
 
 # This will:
 # - Download Python 3.12
@@ -61,7 +65,7 @@ docker-compose build
 # Takes ~2-3 minutes on first run
 
 # Start the container
-docker-compose up
+docker compose up
 
 # You should see:
 # ✅ ANTHROPIC_API_KEY configured
@@ -69,6 +73,8 @@ docker-compose up
 # 📊 Database: /app/data/learner_agent.db
 # Uvicorn running on http://0.0.0.0:8000
 ```
+
+**Note:** If you're using older Docker Compose V1 (standalone), use `docker-compose` (with hyphen) instead.
 
 **Open your browser:** http://localhost:8000
 
@@ -78,9 +84,10 @@ docker-compose up
 
 1. Click **"+ Create New Agent"**
 2. Enter a topic, for example: **"How to Make Pizza"**
-3. Click **"Start Teaching"**
-4. The agent will greet you: *"Hi! I'm excited to learn about How to Make Pizza..."*
-5. Teach the agent:
+3. Select language: **English** or **Español**
+4. Click **"Start Teaching"**
+5. The agent will greet you: *"Hi! I'm excited to learn about How to Make Pizza..."*
+6. Teach the agent:
    ```
    You: Pizza is a flatbread topped with tomato sauce, cheese, and toppings, then baked in an oven.
 
@@ -90,8 +97,9 @@ docker-compose up
 
    Agent: I see! So the mozzarella goes on top of the sauce? What temperature do you bake it at?
    ```
-6. After teaching, type `/done`
-7. Review the assessment — the agent explains pizza using ONLY what you taught
+7. After teaching, type `/done`
+8. Review the assessment — the agent explains pizza using ONLY what you taught
+9. **See token usage** and estimated cost at the bottom of the assessment
 
 ---
 
@@ -110,13 +118,22 @@ If the graph is empty or incomplete:
 
 ---
 
-### Step 5: Stop the Container
+### Step 5: Test Session Continuation
+
+1. Create a new session and teach 3-4 concepts
+2. Type `/quit` (not `/done`) to save and exit
+3. Click **"View All Sessions"** on the home page
+4. Click **"Continue Teaching"** on your session
+5. Your entire conversation history should be restored
+6. Continue teaching from where you left off
+
+### Step 6: Stop the Container
 
 ```bash
 # Press Ctrl+C in the terminal
 
 # Or stop in background:
-docker-compose down
+docker compose down
 ```
 
 Your data is saved in `./data/learner_agent.db` and persists between runs.
@@ -130,10 +147,12 @@ Run through these scenarios to validate the MVP:
 ### Basic Functionality
 
 - [ ] Create a session with a simple topic (e.g., "Bicycles")
+- [ ] Select language (English or Spanish)
 - [ ] Teach the agent 3-5 concepts
 - [ ] Use `/graph` to view knowledge graph
 - [ ] Use `/done` to see assessment
 - [ ] Verify agent can explain the topic
+- [ ] Check token usage and cost estimation in assessment
 
 ### Knowledge Suppression
 
@@ -326,16 +345,26 @@ docker-compose up
 
 ## 📊 Monitoring Costs
 
+The application now automatically tracks token usage for every session.
+
+**In-App Monitoring:**
+- Token counts displayed at the end of each session assessment
+- Estimated cost shown based on Claude API pricing
+- Helps you stay within budget
+
+**External Monitoring:**
+
 Track your Anthropic API usage:
 
 1. Visit https://console.anthropic.com
 2. Go to "Usage" → "API Usage"
-3. Monitor costs per session
+3. Monitor cumulative costs
 
 **Budget alerts:**
 - Set a monthly budget limit in Anthropic console
-- ~$0.13 per teaching session
+- ~$0.13 per teaching session (20 turns)
 - 100 sessions = ~$13 USD
+- Token tracking helps predict costs before completing sessions
 
 ---
 
@@ -434,10 +463,13 @@ If you encounter issues:
 You'll know the MVP is working when:
 
 - ✅ Agent starts with "I know nothing about {topic}"
+- ✅ Agent responds in selected language (English or Spanish)
 - ✅ Knowledge graph updates during teaching
 - ✅ Assessment uses ONLY taught concepts
 - ✅ Agent admits gaps: "You didn't teach me that"
 - ✅ Sessions persist across restarts
+- ✅ Conversation history restored when continuing
+- ✅ Token usage tracked and displayed
 - ✅ Total cost per session < $0.20
 
 ---
@@ -454,10 +486,16 @@ Once this MVP is validated, consider:
 
 ---
 
-**Current Status:** ✅ MVP Ready for Testing
+**Current Status:** ✅ MVP Ready for Testing (with token tracking & session continuation)
 
 **Location:** `/Users/ernestolaval/Documents/Prototipos/learner-agent-core`
 
-**First Command:** `docker-compose up`
+**First Command:** `docker compose up`
+
+**Recent Updates:**
+- ✅ Multi-language support (English/Spanish)
+- ✅ Token usage tracking with cost estimation
+- ✅ Session continuation with full history
+- ✅ Updated Docker Compose commands (V2)
 
 Good luck! 🚀

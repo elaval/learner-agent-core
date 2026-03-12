@@ -98,6 +98,10 @@ async def handle_teaching_session(websocket: WebSocket, session_id: int):
     turn_count = session["total_turns"]
     session_start_time = datetime.now()
 
+    # Token tracking (load existing or start fresh)
+    total_tokens_input = session.get("tokens_input", 0) or 0
+    total_tokens_output = session.get("tokens_output", 0) or 0
+
     # Send welcome message
     await websocket.send_json({
         "type": "status",
@@ -114,6 +118,25 @@ async def handle_teaching_session(websocket: WebSocket, session_id: int):
             "type": "agent_message",
             "content": opening_message
         })
+    else:
+        # Resuming existing session - send conversation history
+        await websocket.send_json({
+            "type": "status",
+            "content": f"Resuming session with {turn_count} previous turns"
+        })
+
+        # Send each message from history
+        for msg in conversation_history:
+            if msg["role"] == "agent" or msg["role"] == "assistant":
+                await websocket.send_json({
+                    "type": "agent_message",
+                    "content": msg["content"]
+                })
+            elif msg["role"] == "student" or msg["role"] == "user":
+                await websocket.send_json({
+                    "type": "student_message_history",
+                    "content": msg["content"]
+                })
 
     try:
         while True:
@@ -139,10 +162,14 @@ async def handle_teaching_session(websocket: WebSocket, session_id: int):
                 )
 
                 # Generate agent response
-                agent_response = learner_agent.generate_response(
+                agent_response, input_tokens, output_tokens = learner_agent.generate_response(
                     student_message=student_message,
                     knowledge_graph=knowledge_graph
                 )
+
+                # Accumulate token usage
+                total_tokens_input += input_tokens
+                total_tokens_output += output_tokens
 
                 conversation_history.append({"role": "agent", "content": agent_response})
 
@@ -158,8 +185,11 @@ async def handle_teaching_session(websocket: WebSocket, session_id: int):
                         session_id,
                         turn_count,
                         knowledge_graph,
+                        knowledge_builder,
                         conversation_history,
-                        session_start_time
+                        session_start_time,
+                        total_tokens_input,
+                        total_tokens_output
                     )
 
             elif data["type"] == "command":
@@ -179,9 +209,13 @@ async def handle_teaching_session(websocket: WebSocket, session_id: int):
                         session_id,
                         turn_count,
                         knowledge_graph,
+                        knowledge_builder,
                         conversation_history,
                         session_start_time,
-                        topic_name
+                        topic_name,
+                        total_tokens_input,
+                        total_tokens_output,
+                        language
                     )
                     break
 
@@ -191,8 +225,11 @@ async def handle_teaching_session(websocket: WebSocket, session_id: int):
                         session_id,
                         turn_count,
                         knowledge_graph,
+                        knowledge_builder,
                         conversation_history,
-                        session_start_time
+                        session_start_time,
+                        total_tokens_input,
+                        total_tokens_output
                     )
                     await websocket.send_json({
                         "type": "status",
@@ -206,8 +243,11 @@ async def handle_teaching_session(websocket: WebSocket, session_id: int):
             session_id,
             turn_count,
             knowledge_graph,
+            knowledge_builder,
             conversation_history,
-            session_start_time
+            session_start_time,
+            total_tokens_input,
+            total_tokens_output
         )
     except Exception as e:
         await websocket.send_json({
@@ -251,12 +291,19 @@ async def save_session_state(
     session_id: int,
     turn_count: int,
     knowledge_graph: KnowledgeGraph,
+    knowledge_builder: KnowledgeBuilder,
     conversation_history: List[Dict],
-    session_start_time: datetime
+    session_start_time: datetime,
+    total_tokens_input: int,
+    total_tokens_output: int
 ):
     """Save current session state to database."""
     duration = (datetime.now() - session_start_time).total_seconds() / 60.0
     stats = knowledge_graph.get_stats()
+
+    # Add knowledge builder tokens to total
+    combined_input_tokens = total_tokens_input + knowledge_builder.total_input_tokens
+    combined_output_tokens = total_tokens_output + knowledge_builder.total_output_tokens
 
     db.update_session(
         session_id=session_id,
@@ -264,6 +311,8 @@ async def save_session_state(
         duration_minutes=duration,
         concepts_extracted=stats["concepts"],
         relationships_extracted=stats["relationships"],
+        tokens_input=combined_input_tokens,
+        tokens_output=combined_output_tokens,
         knowledge_graph_json=json.dumps(knowledge_graph.to_dict(), ensure_ascii=False),
         conversation_history_json=json.dumps(conversation_history, ensure_ascii=False)
     )
@@ -274,14 +323,22 @@ async def finalize_session(
     session_id: int,
     turn_count: int,
     knowledge_graph: KnowledgeGraph,
+    knowledge_builder: KnowledgeBuilder,
     conversation_history: List[Dict],
     session_start_time: datetime,
-    topic_name: str
+    topic_name: str,
+    total_tokens_input: int,
+    total_tokens_output: int,
+    language: str = "en"
 ):
     """Finalize session and generate assessment."""
     # Save final state
     duration = (datetime.now() - session_start_time).total_seconds() / 60.0
     stats = knowledge_graph.get_stats()
+
+    # Add knowledge builder tokens to total (before assessment)
+    combined_input_tokens = total_tokens_input + knowledge_builder.total_input_tokens
+    combined_output_tokens = total_tokens_output + knowledge_builder.total_output_tokens
 
     db.update_session(
         session_id=session_id,
@@ -289,6 +346,8 @@ async def finalize_session(
         duration_minutes=duration,
         concepts_extracted=stats["concepts"],
         relationships_extracted=stats["relationships"],
+        tokens_input=combined_input_tokens,
+        tokens_output=combined_output_tokens,
         knowledge_graph_json=json.dumps(knowledge_graph.to_dict(), ensure_ascii=False),
         conversation_history_json=json.dumps(conversation_history, ensure_ascii=False),
         completed_at=datetime.now().isoformat()
@@ -306,26 +365,48 @@ async def finalize_session(
 
     system_prompt = get_assessment_system_prompt(
         topic_name,
-        json.dumps(knowledge_graph.to_dict(), ensure_ascii=False)
+        json.dumps(knowledge_graph.to_dict(), ensure_ascii=False),
+        language
     )
+
+    # Use appropriate user message based on language
+    user_message = f"Por favor explica lo que aprendiste sobre {topic_name}." if language == "es" else f"Please explain what you learned about {topic_name}."
 
     response = client.messages.create(
         model=LEARNER_MODEL,
         max_tokens=2000,
         system=system_prompt,
         messages=[
-            {"role": "user", "content": f"Please explain what you learned about {topic_name}."}
+            {"role": "user", "content": user_message}
         ]
     )
 
     assessment_text = response.content[0].text
+
+    # Add assessment tokens to total
+    assessment_input_tokens = response.usage.input_tokens
+    assessment_output_tokens = response.usage.output_tokens
+    final_input_tokens = combined_input_tokens + assessment_input_tokens
+    final_output_tokens = combined_output_tokens + assessment_output_tokens
+
+    # Update database with final token counts including assessment
+    db.update_session(
+        session_id=session_id,
+        tokens_input=final_input_tokens,
+        tokens_output=final_output_tokens
+    )
 
     await websocket.send_json({
         "type": "assessment",
         "content": {
             "assessment": assessment_text,
             "stats": stats,
-            "knowledge_graph": knowledge_graph.to_dict()
+            "knowledge_graph": knowledge_graph.to_dict(),
+            "tokens": {
+                "input": final_input_tokens,
+                "output": final_output_tokens,
+                "total": final_input_tokens + final_output_tokens
+            }
         }
     })
 

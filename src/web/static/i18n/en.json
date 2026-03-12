@@ -1,0 +1,108 @@
+{
+  "app": {
+    "title": "Learner Agent Core",
+    "subtitle": "Teach an AI that starts knowing nothing"
+  },
+  "nav": {
+    "home": "Home",
+    "sessions": "View All Sessions",
+    "language": "Language"
+  },
+  "landing": {
+    "hero": "Teach an AI Agent",
+    "description": "Unlike traditional AI tutors, this agent starts with zero knowledge. You teach it about any topic, and it learns in real-time.",
+    "createButton": "+ Create New Agent",
+    "sessionsButton": "📚 View All Sessions",
+    "statsTitle": "Platform Stats",
+    "totalSessions": "Total Sessions",
+    "uniqueTopics": "Unique Topics",
+    "avgConcepts": "Avg. Concepts/Session",
+    "howItWorks": "How It Works",
+    "step1Title": "1. Create Agent",
+    "step1Desc": "Choose any topic",
+    "step2Title": "2. Teach",
+    "step2Desc": "Agent asks questions",
+    "step3Title": "3. Assess",
+    "step3Desc": "Agent explains what it learned"
+  },
+  "create": {
+    "title": "Create New Learning Agent",
+    "topicLabel": "What topic will you teach?",
+    "topicPlaceholder": "e.g., How to Make Pizza, Photosynthesis, My Hometown...",
+    "languageLabel": "Language / Idioma",
+    "languageHelp": "The agent will respond in this language",
+    "languageEn": "English",
+    "languageEs": "Español",
+    "startButton": "Start Teaching",
+    "cancelButton": "← Back"
+  },
+  "sessions": {
+    "title": "Your Teaching Sessions",
+    "loading": "Loading sessions...",
+    "empty": "No sessions yet. Create your first agent!",
+    "completed": "Assessed",
+    "inProgress": "In Progress",
+    "continueButton": "Continue Teaching",
+    "deleteButton": "Delete",
+    "deleteConfirm": "Delete this session? This cannot be undone.",
+    "backButton": "← Back to Home",
+    "meta": {
+      "turns": "turns",
+      "concepts": "concepts"
+    }
+  },
+  "teaching": {
+    "topic": "Topic",
+    "stats": {
+      "turns": "turns",
+      "concepts": "concepts",
+      "relationships": "relationships"
+    },
+    "commands": {
+      "graph": "📊 Show Graph",
+      "done": "✅ Finish & Assess",
+      "quit": "💾 Save & Exit"
+    },
+    "inputPlaceholder": "Type your message or /graph, /done, /quit...",
+    "sendButton": "Send",
+    "messageRoles": {
+      "agent": "Agent",
+      "you": "You"
+    }
+  },
+  "graph": {
+    "title": "Knowledge Graph",
+    "concepts": "Concepts",
+    "relationships": "Relationships",
+    "closeButton": "Close"
+  },
+  "assessment": {
+    "title": "Session Assessment",
+    "whatLearned": "What the Agent Learned",
+    "stats": {
+      "conceptsLearned": "Concepts Learned",
+      "relationships": "Relationships",
+      "evidence": "Evidence"
+    },
+    "tokens": {
+      "title": "Token Usage",
+      "input": "Input Tokens",
+      "output": "Output Tokens",
+      "total": "Total Tokens",
+      "cost": "Estimated cost: ${cost} USD",
+      "costNote": "(Approximate based on Claude API pricing)"
+    },
+    "closeButton": "Close"
+  },
+  "status": {
+    "connected": "Connected to teaching session for '{topic}'",
+    "resuming": "Resuming session with {turns} previous turns",
+    "saved": "Session saved. Goodbye!",
+    "generating": "Generating assessment...",
+    "generatingGraph": "Generating knowledge graph...",
+    "finalizingSession": "Finalizing session and generating assessment...",
+    "completed": "Session completed!",
+    "sessionEnded": "Session ended",
+    "error": "Error: {message}"
+  }
+}

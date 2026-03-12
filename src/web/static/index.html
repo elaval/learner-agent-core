@@ -3,15 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Learner Agent Core</title>
+    <title data-i18n="app.title">Learner Agent Core</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
     <div class="container">
         <!-- Header -->
         <header class="header">
-            <h1>🧠 Learner Agent Core</h1>
-            <p class="subtitle">Teach an AI agent about anything - it starts knowing nothing</p>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h1>🧠 <span data-i18n="app.title">Learner Agent Core</span></h1>
+                    <p class="subtitle" data-i18n="app.subtitle">Teach an AI agent about anything - it starts knowing nothing</p>
+                </div>
+                <div>
+                    <select id="ui-language-select" onchange="changeUILanguage(this.value)" style="padding: 0.5rem; border-radius: 0.375rem; border: 1px solid #d1d5db;">
+                        <option value="en">🇬🇧 English</option>
+                        <option value="es">🇪🇸 Español</option>
+                    </select>
+                </div>
+            </div>
         </header>
 
         <!-- Main Content Area -->
@@ -20,14 +30,14 @@
             <!-- Landing View (default) -->
             <div id="landing-view" class="view">
                 <div class="welcome-card">
-                    <h2>Welcome!</h2>
-                    <p>Create a new agent to teach, or continue with an existing session.</p>
+                    <h2 data-i18n="landing.hero">Welcome!</h2>
+                    <p data-i18n="landing.description">Create a new agent to teach, or continue with an existing session.</p>
 
                     <div class="action-buttons">
-                        <button class="btn btn-primary" onclick="showCreateAgent()">
+                        <button class="btn btn-primary" onclick="showCreateAgent()" data-i18n="landing.createButton">
                             + Create New Agent
                         </button>
-                        <button class="btn btn-secondary" onclick="showSessionsList()">
+                        <button class="btn btn-secondary" onclick="showSessionsList()" data-i18n="landing.sessionsButton">
                             📚 My Sessions
                         </button>
                     </div>
@@ -37,50 +47,49 @@
                 <div class="stats-grid" id="stats-grid">
                     <div class="stat-card">
                         <div class="stat-value" id="total-sessions">-</div>
-                        <div class="stat-label">Total Sessions</div>
+                        <div class="stat-label" data-i18n="landing.totalSessions">Total Sessions</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-value" id="total-topics">-</div>
-                        <div class="stat-label">Topics Explored</div>
+                        <div class="stat-label" data-i18n="landing.uniqueTopics">Topics Explored</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-value" id="avg-concepts">-</div>
-                        <div class="stat-label">Avg Concepts/Session</div>
+                        <div class="stat-label" data-i18n="landing.avgConcepts">Avg Concepts/Session</div>
                     </div>
                 </div>
             </div>
 
             <!-- Create Agent View -->
             <div id="create-view" class="view hidden">
-                <button class="btn-back" onclick="showLanding()">← Back</button>
+                <button class="btn-back" onclick="showLanding()" data-i18n="create.cancelButton">← Back</button>
 
                 <div class="form-card">
-                    <h2>Create New Learning Agent</h2>
-                    <p>Your agent will start with zero knowledge. Teach it about anything!</p>
+                    <h2 data-i18n="create.title">Create New Learning Agent</h2>
 
                     <form id="create-form" onsubmit="createAgent(event)">
                         <div class="form-group">
-                            <label for="topic-input">What topic will you teach?</label>
+                            <label for="topic-input" data-i18n="create.topicLabel">What topic will you teach?</label>
                             <input
                                 type="text"
                                 id="topic-input"
+                                data-i18n-placeholder="create.topicPlaceholder"
                                 placeholder="e.g., My Hometown, Pizza Recipe, JavaScript Basics..."
                                 required
                                 autocomplete="off"
                             >
-                            <small>Be specific! The agent knows nothing about this topic.</small>
                         </div>
 
                         <div class="form-group">
-                            <label for="language-select">Language / Idioma</label>
+                            <label for="language-select" data-i18n="create.languageLabel">Language / Idioma</label>
                             <select id="language-select" required>
-                                <option value="en">English</option>
-                                <option value="es">Español</option>
+                                <option value="en" data-i18n="create.languageEn">English</option>
+                                <option value="es" data-i18n="create.languageEs">Español</option>
                             </select>
-                            <small>The agent will respond in this language</small>
+                            <small data-i18n="create.languageHelp">The agent will respond in this language</small>
                         </div>
 
-                        <button type="submit" class="btn btn-primary">
+                        <button type="submit" class="btn btn-primary" data-i18n="create.startButton">
                             Start Teaching
                         </button>
                     </form>
@@ -89,23 +98,23 @@
 
             <!-- Sessions List View -->
             <div id="sessions-view" class="view hidden">
-                <button class="btn-back" onclick="showLanding()">← Back</button>
+                <button class="btn-back" onclick="showLanding()" data-i18n="sessions.backButton">← Back</button>
 
-                <h2>My Teaching Sessions</h2>
+                <h2 data-i18n="sessions.title">My Teaching Sessions</h2>
                 <div id="sessions-list" class="sessions-list">
-                    <p class="loading">Loading sessions...</p>
+                    <p class="loading" data-i18n="sessions.loading">Loading sessions...</p>
                 </div>
             </div>
 
             <!-- Teaching View (Chat Interface) -->
             <div id="teaching-view" class="view hidden">
                 <div class="teaching-header">
-                    <button class="btn-back" onclick="endTeaching()">← End Session</button>
+                    <button class="btn-back" onclick="endTeaching()" data-i18n="sessions.backButton">← End Session</button>
                     <h2 id="teaching-topic">Topic</h2>
                     <div class="teaching-stats">
-                        <span id="stat-turns">0 turns</span>
-                        <span id="stat-concepts">0 concepts</span>
-                        <span id="stat-relationships">0 relationships</span>
+                        <span id="stat-turns">0 <span data-i18n="teaching.stats.turns">turns</span></span>
+                        <span id="stat-concepts">0 <span data-i18n="teaching.stats.concepts">concepts</span></span>
+                        <span id="stat-relationships">0 <span data-i18n="teaching.stats.relationships">relationships</span></span>
                     </div>
                 </div>
 
@@ -115,17 +124,18 @@
                 <!-- Chat Input -->
                 <div class="chat-input-container">
                     <div class="chat-commands">
-                        <button class="btn-command" onclick="sendCommand('/graph')">📊 Show Graph</button>
-                        <button class="btn-command" onclick="sendCommand('/done')">✅ Finish & Assess</button>
+                        <button class="btn-command" onclick="sendCommand('/graph')" data-i18n="teaching.commands.graph">📊 Show Graph</button>
+                        <button class="btn-command" onclick="sendCommand('/done')" data-i18n="teaching.commands.done">✅ Finish & Assess</button>
                     </div>
                     <div class="chat-input-wrapper">
                         <textarea
                             id="chat-input"
+                            data-i18n-placeholder="teaching.inputPlaceholder"
                             placeholder="Explain the topic to your agent..."
                             rows="3"
                             onkeydown="handleChatKeydown(event)"
                         ></textarea>
-                        <button id="send-button" onclick="sendMessage()">Send</button>
+                        <button id="send-button" onclick="sendMessage()" data-i18n="teaching.sendButton">Send</button>
                     </div>
                 </div>
             </div>
@@ -137,7 +147,7 @@
     <div id="graph-modal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Knowledge Graph</h3>
+                <h3 data-i18n="graph.title">Knowledge Graph</h3>
                 <button class="modal-close" onclick="closeModal('graph-modal')">×</button>
             </div>
             <div class="modal-body" id="graph-content">
@@ -150,20 +160,21 @@
     <div id="assessment-modal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Assessment - What the Agent Learned</h3>
+                <h3 data-i18n="assessment.title">Assessment - What the Agent Learned</h3>
                 <button class="modal-close" onclick="closeModal('assessment-modal')">×</button>
             </div>
             <div class="modal-body" id="assessment-content">
                 <!-- Will be populated dynamically -->
             </div>
             <div class="modal-footer">
-                <button class="btn btn-primary" onclick="closeModal('assessment-modal'); showLanding();">
+                <button class="btn btn-primary" onclick="closeModal('assessment-modal'); showLanding();" data-i18n="assessment.closeButton">
                     Back to Home
                 </button>
             </div>
         </div>
     </div>
 
+    <script src="/static/i18n.js"></script>
     <script src="/static/app.js"></script>
 </body>
 </html>

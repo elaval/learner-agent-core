@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Learner Agent Core</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>🧠 Learner Agent Core</h1>
+            <p class="subtitle">Teach an AI agent about anything - it starts knowing nothing</p>
+        </header>
+
+        <!-- Main Content Area -->
+        <main id="main-content">
+
+            <!-- Landing View (default) -->
+            <div id="landing-view" class="view">
+                <div class="welcome-card">
+                    <h2>Welcome!</h2>
+                    <p>Create a new agent to teach, or continue with an existing session.</p>
+
+                    <div class="action-buttons">
+                        <button class="btn btn-primary" onclick="showCreateAgent()">
+                            + Create New Agent
+                        </button>
+                        <button class="btn btn-secondary" onclick="showSessionsList()">
+                            📚 My Sessions
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="stats-grid" id="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="total-sessions">-</div>
+                        <div class="stat-label">Total Sessions</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="total-topics">-</div>
+                        <div class="stat-label">Topics Explored</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="avg-concepts">-</div>
+                        <div class="stat-label">Avg Concepts/Session</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Create Agent View -->
+            <div id="create-view" class="view hidden">
+                <button class="btn-back" onclick="showLanding()">← Back</button>
+
+                <div class="form-card">
+                    <h2>Create New Learning Agent</h2>
+                    <p>Your agent will start with zero knowledge. Teach it about anything!</p>
+
+                    <form id="create-form" onsubmit="createAgent(event)">
+                        <div class="form-group">
+                            <label for="topic-input">What topic will you teach?</label>
+                            <input
+                                type="text"
+                                id="topic-input"
+                                placeholder="e.g., My Hometown, Pizza Recipe, JavaScript Basics..."
+                                required
+                                autocomplete="off"
+                            >
+                            <small>Be specific! The agent knows nothing about this topic.</small>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">
+                            Start Teaching
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Sessions List View -->
+            <div id="sessions-view" class="view hidden">
+                <button class="btn-back" onclick="showLanding()">← Back</button>
+
+                <h2>My Teaching Sessions</h2>
+                <div id="sessions-list" class="sessions-list">
+                    <p class="loading">Loading sessions...</p>
+                </div>
+            </div>
+
+            <!-- Teaching View (Chat Interface) -->
+            <div id="teaching-view" class="view hidden">
+                <div class="teaching-header">
+                    <button class="btn-back" onclick="endTeaching()">← End Session</button>
+                    <h2 id="teaching-topic">Topic</h2>
+                    <div class="teaching-stats">
+                        <span id="stat-turns">0 turns</span>
+                        <span id="stat-concepts">0 concepts</span>
+                        <span id="stat-relationships">0 relationships</span>
+                    </div>
+                </div>
+
+                <!-- Chat Messages -->
+                <div id="chat-messages" class="chat-messages"></div>
+
+                <!-- Chat Input -->
+                <div class="chat-input-container">
+                    <div class="chat-commands">
+                        <button class="btn-command" onclick="sendCommand('/graph')">📊 Show Graph</button>
+                        <button class="btn-command" onclick="sendCommand('/done')">✅ Finish & Assess</button>
+                    </div>
+                    <div class="chat-input-wrapper">
+                        <textarea
+                            id="chat-input"
+                            placeholder="Explain the topic to your agent..."
+                            rows="3"
+                            onkeydown="handleChatKeydown(event)"
+                        ></textarea>
+                        <button id="send-button" onclick="sendMessage()">Send</button>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Modal for Knowledge Graph -->
+    <div id="graph-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Knowledge Graph</h3>
+                <button class="modal-close" onclick="closeModal('graph-modal')">×</button>
+            </div>
+            <div class="modal-body" id="graph-content">
+                <!-- Will be populated dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Assessment -->
+    <div id="assessment-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Assessment - What the Agent Learned</h3>
+                <button class="modal-close" onclick="closeModal('assessment-modal')">×</button>
+            </div>
+            <div class="modal-body" id="assessment-content">
+                <!-- Will be populated dynamically -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="closeModal('assessment-modal'); showLanding();">
+                    Back to Home
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

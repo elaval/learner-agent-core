@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  learner-agent:
+    build: .
+    container_name: learner-agent-core
+    ports:
+      - "8000:8000"
+    environment:
+      # Anthropic API Configuration
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+
+      # Model Configuration (optional, uses defaults if not set)
+      - LEARNER_MODEL=${LEARNER_MODEL:-claude-sonnet-4-20250514}
+      - EXTRACTOR_MODEL=${EXTRACTOR_MODEL:-claude-haiku-4-5-20251001}
+
+      # Application Configuration
+      - APP_ENV=${APP_ENV:-production}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+
+    volumes:
+      # Persist SQLite database
+      - ./data:/app/data
+
+    restart: unless-stopped
+
+    # Optional: resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+# Optional: add a network for future services (e.g., nginx, postgres)
+networks:
+  default:
+    name: learner-agent-network

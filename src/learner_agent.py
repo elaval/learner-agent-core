@@ -79,11 +79,7 @@ class LearnerAgent:
 
     def get_initial_greeting(self) -> str:
         """Get the initial greeting from the agent."""
-        # Detect language from topic name
-        spanish_indicators = ['á', 'é', 'í', 'ó', 'ú', 'ñ', 'fotosíntesis', 'ciclo', 'agua', 'sistema', 'solar']
-        is_spanish = any(indicator in self.topic_name.lower() for indicator in spanish_indicators)
-
-        if is_spanish:
+        if self.language == "es":
             initial_prompt = f"""Estás conociendo a un estudiante que te va a enseñar sobre {self.topic_name}.
 Preséntate con entusiasmo en ESPAÑOL. Dile:
 1. Que estás emocionado de aprender de él/ella
@@ -124,8 +120,8 @@ IMPORTANT: Respond 100% in English, no Spanish words."""
 
         except Exception as e:
             print(f"[ERROR] Failed to generate greeting: {e}")
-            # Fallback greeting based on language detection
-            if is_spanish:
+            # Fallback greeting based on language
+            if self.language == "es":
                 return f"¡Hola! Soy tu estudiante y estoy listo para aprender. Me dijeron que tú sabes mucho sobre {self.topic_name}. ¿Me puedes enseñar? ¡No sé nada del tema!"
             else:
                 return f"Hi! I'm your student and I'm ready to learn. I heard you know a lot about {self.topic_name}. Can you teach me? I don't know anything about it!"

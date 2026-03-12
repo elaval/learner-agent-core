@@ -78,7 +78,8 @@ async def handle_teaching_session(websocket: WebSocket, session_id: int):
 
     learner_agent = LearnerAgent(
         client=client,
-        topic_name=topic_name
+        topic_name=topic_name,
+        language=language
     )
 
     knowledge_builder = KnowledgeBuilder(

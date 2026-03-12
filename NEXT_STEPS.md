@@ -269,6 +269,42 @@ fly deploy
 
 ## 🐛 Troubleshooting
 
+### "Port 8000 is already in use"
+
+**Symptoms:**
+- Error: "bind: address already in use"
+- Cannot access http://localhost:8000
+
+**Fix:**
+
+1. Check if port 8000 is available:
+   ```bash
+   ./scripts/check-port.sh 8000
+   ```
+
+2. If port is in use, the script will:
+   - Identify the process using the port
+   - Suggest an alternative port (e.g., 8001)
+
+3. Use a different port:
+   ```bash
+   # Option 1: Update .env file
+   echo "PORT=8001" >> .env
+   docker compose up
+
+   # Option 2: Use environment variable
+   PORT=8001 docker compose up
+   ```
+
+4. Access the application at the new port:
+   ```
+   http://localhost:8001
+   ```
+
+**Note:** The application always listens on port 8000 inside the container. The `PORT` variable only changes the external port mapping.
+
+---
+
 ### "Connection refused" at http://localhost:8000
 
 ```bash
@@ -276,10 +312,10 @@ fly deploy
 docker ps
 
 # View logs
-docker-compose logs -f
+docker compose logs -f
 
 # If not running, start again
-docker-compose up
+docker compose up
 ```
 
 ### "Knowledge graph is empty"
@@ -497,5 +533,7 @@ Once this MVP is validated, consider:
 - ✅ Token usage tracking with cost estimation
 - ✅ Session continuation with full history
 - ✅ Updated Docker Compose commands (V2)
+- ✅ Configurable port via environment variable
+- ✅ Port availability checking script
 
 Good luck! 🚀

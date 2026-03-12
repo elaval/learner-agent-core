@@ -78,6 +78,23 @@ Then open your browser to: **http://localhost:8000**
 
 That's it! 🎉
 
+#### Port Already in Use?
+
+If port 8000 is already taken on your machine, you can check and use an alternative:
+
+```bash
+# Check if port 8000 is available
+./scripts/check-port.sh 8000
+
+# If port is in use, create a .env file and change the port:
+echo "PORT=8001" >> .env
+
+# Then start with the new port
+docker compose up
+```
+
+The application will be available at `http://localhost:<PORT>` (e.g., http://localhost:8001).
+
 ---
 
 ## 📖 How to Use
@@ -322,10 +339,32 @@ See `.env.example` for all options:
 ANTHROPIC_API_KEY=your_key_here
 
 # Optional (defaults shown)
+PORT=8000                        # External port for accessing the application
 LEARNER_MODEL=claude-sonnet-4-20250514
 EXTRACTOR_MODEL=claude-haiku-4-5-20251001
 APP_ENV=production
 LOG_LEVEL=info
+```
+
+**PORT Configuration:**
+
+The `PORT` variable controls which external port the application uses. This is useful if:
+- Port 8000 is already in use by another application
+- You want to run multiple instances of Learner Agent Core
+- Your firewall or security policy requires specific ports
+
+To check if a port is available:
+```bash
+./scripts/check-port.sh 8000
+```
+
+To use a different port:
+```bash
+# Add to your .env file
+PORT=8001
+
+# Or use environment variable directly
+PORT=8001 docker compose up
 ```
 
 ### Models

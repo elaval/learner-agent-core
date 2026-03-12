@@ -5,7 +5,7 @@ services:
     build: .
     container_name: learner-agent-core
     ports:
-      - "8000:8000"
+      - "${PORT:-8000}:8000"
     environment:
       # Anthropic API Configuration
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}

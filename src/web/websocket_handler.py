@@ -44,9 +44,10 @@ async def handle_teaching_session(websocket: WebSocket, session_id: int):
         return
 
     topic_name = session["topic_name"]
+    language = session.get("language", "en")  # Default to English if not set
 
     # Initialize knowledge graph
-    knowledge_graph = KnowledgeGraph(topic_name)
+    knowledge_graph = KnowledgeGraph()
 
     # Load existing knowledge if session is being resumed
     if session["knowledge_graph_json"]:
@@ -72,14 +73,17 @@ async def handle_teaching_session(websocket: WebSocket, session_id: int):
             print(f"Warning: Could not restore knowledge graph: {e}")
 
     # Initialize agents
+    from anthropic import Anthropic
+    client = Anthropic(api_key=API_KEY)
+
     learner_agent = LearnerAgent(
-        api_key=API_KEY,
-        model=LEARNER_MODEL
+        client=client,
+        topic_name=topic_name
     )
 
     knowledge_builder = KnowledgeBuilder(
-        api_key=API_KEY,
-        model=EXTRACTOR_MODEL
+        client=client,
+        topic_name=topic_name
     )
 
     # Conversation history
@@ -101,12 +105,7 @@ async def handle_teaching_session(websocket: WebSocket, session_id: int):
 
     # If starting fresh, send agent's opening message
     if turn_count == 0:
-        system_prompt = get_learner_system_prompt(topic_name, turn_count, [])
-        opening_message = await learner_agent.generate_response(
-            message="",
-            system_prompt=system_prompt,
-            conversation_history=conversation_history
-        )
+        opening_message = learner_agent.get_initial_greeting()
 
         conversation_history.append({"role": "agent", "content": opening_message})
 
@@ -139,13 +138,9 @@ async def handle_teaching_session(websocket: WebSocket, session_id: int):
                 )
 
                 # Generate agent response
-                concept_list = knowledge_graph.get_concepts_list()
-                system_prompt = get_learner_system_prompt(topic_name, turn_count, concept_list)
-
-                agent_response = await learner_agent.generate_response(
-                    message=student_message,
-                    system_prompt=system_prompt,
-                    conversation_history=conversation_history
+                agent_response = learner_agent.generate_response(
+                    student_message=student_message,
+                    knowledge_graph=knowledge_graph
                 )
 
                 conversation_history.append({"role": "agent", "content": agent_response})
@@ -230,10 +225,14 @@ async def extract_knowledge_async(
 ):
     """Extract knowledge in background and send updates."""
     try:
-        await knowledge_builder.extract_and_update(
-            student_message=student_message,
-            knowledge_graph=knowledge_graph,
-            topic_name=topic_name
+        # Run synchronous extraction in executor to not block
+        import asyncio
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(
+            None,
+            knowledge_builder.process_student_message,
+            student_message,
+            knowledge_graph
         )
 
         # Send updated stats
@@ -262,8 +261,8 @@ async def save_session_state(
         session_id=session_id,
         total_turns=turn_count,
         duration_minutes=duration,
-        concepts_extracted=stats["total_concepts"],
-        relationships_extracted=stats["total_relationships"],
+        concepts_extracted=stats["concepts"],
+        relationships_extracted=stats["relationships"],
         knowledge_graph_json=json.dumps(knowledge_graph.to_dict(), ensure_ascii=False),
         conversation_history_json=json.dumps(conversation_history, ensure_ascii=False)
     )
@@ -287,8 +286,8 @@ async def finalize_session(
         session_id=session_id,
         total_turns=turn_count,
         duration_minutes=duration,
-        concepts_extracted=stats["total_concepts"],
-        relationships_extracted=stats["total_relationships"],
+        concepts_extracted=stats["concepts"],
+        relationships_extracted=stats["relationships"],
         knowledge_graph_json=json.dumps(knowledge_graph.to_dict(), ensure_ascii=False),
         conversation_history_json=json.dumps(conversation_history, ensure_ascii=False),
         completed_at=datetime.now().isoformat()

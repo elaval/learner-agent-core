@@ -6,15 +6,16 @@ from typing import List, Dict
 from anthropic import Anthropic
 
 from .knowledge_graph import KnowledgeGraph
-from .prompts import LEARNER_AGENT_PROMPT, get_concept_summary
+from .prompts import get_learner_system_prompt
 
 
 class LearnerAgent:
     """The agent that learns from the student."""
 
-    def __init__(self, client: Anthropic, topic_name: str):
+    def __init__(self, client: Anthropic, topic_name: str, language: str = "en"):
         self.client = client
         self.topic_name = topic_name
+        self.language = language
         self.model = "claude-sonnet-4-20250514"
         self.conversation_history: List[Dict[str, str]] = []
         self.turn_count = 0
@@ -22,12 +23,12 @@ class LearnerAgent:
     def get_system_prompt(self, knowledge_graph: KnowledgeGraph) -> str:
         """Generate the system prompt with current context."""
         concept_list = knowledge_graph.get_concepts_list()
-        concept_summary = get_concept_summary(concept_list)
 
-        return LEARNER_AGENT_PROMPT.format(
+        return get_learner_system_prompt(
             topic_name=self.topic_name,
             turn_count=self.turn_count,
-            concept_summary=concept_summary
+            concept_list=concept_list,
+            language=self.language
         )
 
     def generate_response(self, student_message: str, knowledge_graph: KnowledgeGraph) -> str:

@@ -7,7 +7,7 @@ from typing import Dict, Any
 from anthropic import Anthropic
 
 from .knowledge_graph import KnowledgeGraph
-from .prompts import KNOWLEDGE_BUILDER_PROMPT
+from .prompts import get_knowledge_extraction_prompt
 
 
 class KnowledgeBuilder:
@@ -28,10 +28,10 @@ class KnowledgeBuilder:
         # Build the extraction prompt
         current_graph_json = knowledge_graph.to_json(indent=None) if not knowledge_graph.is_empty() else "{}"
 
-        prompt = KNOWLEDGE_BUILDER_PROMPT.format(
+        prompt = get_knowledge_extraction_prompt(
             topic_name=self.topic_name,
-            current_graph_json=current_graph_json,
-            student_message=student_message
+            student_message=student_message,
+            current_graph_json=current_graph_json
         )
 
         try:

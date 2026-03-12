@@ -61,13 +61,14 @@ async function createAgent(event) {
     event.preventDefault();
 
     const topicName = document.getElementById('topic-input').value.trim();
+    const language = document.getElementById('language-select').value;
     if (!topicName) return;
 
     try {
         const response = await fetch(`${API_BASE}/api/sessions`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ topic_name: topicName })
+            body: JSON.stringify({ topic_name: topicName, language: language })
         });
 
         if (!response.ok) {
@@ -247,6 +248,9 @@ function handleWebSocketMessage(data) {
 }
 
 function addAgentMessage(content) {
+    // Hide typing indicator when agent responds
+    hideTypingIndicator();
+
     const messagesContainer = document.getElementById('chat-messages');
 
     const messageDiv = document.createElement('div');
@@ -312,9 +316,8 @@ function hideTypingIndicator() {
 }
 
 function updateStats(stats) {
-    document.getElementById('stat-turns').textContent = `${stats.total_concepts || 0} turns`;
-    document.getElementById('stat-concepts').textContent = `${stats.total_concepts || 0} concepts`;
-    document.getElementById('stat-relationships').textContent = `${stats.total_relationships || 0} relationships`;
+    document.getElementById('stat-concepts').textContent = `${stats.concepts || 0} concepts`;
+    document.getElementById('stat-relationships').textContent = `${stats.relationships || 0} relationships`;
 }
 
 // ===== CHAT INPUT =====
@@ -430,15 +433,15 @@ function showAssessment(assessmentData) {
     html += `
         <div class="stats-grid">
             <div class="stat-card">
-                <div class="stat-value">${assessmentData.stats.total_concepts}</div>
+                <div class="stat-value">${assessmentData.stats.concepts || 0}</div>
                 <div class="stat-label">Concepts Learned</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value">${assessmentData.stats.total_relationships}</div>
+                <div class="stat-value">${assessmentData.stats.relationships || 0}</div>
                 <div class="stat-label">Relationships</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value">${assessmentData.stats.total_evidence}</div>
+                <div class="stat-value">${assessmentData.stats.evidence || 0}</div>
                 <div class="stat-label">Evidence</div>
             </div>
         </div>

@@ -37,6 +37,7 @@ app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 class SessionCreate(BaseModel):
     topic_name: str
+    language: str = "en"
 
 
 class SessionResponse(BaseModel):
@@ -84,7 +85,7 @@ async def create_session(session: SessionCreate):
     Returns:
         Created session details
     """
-    session_id = db.create_session(session.topic_name)
+    session_id = db.create_session(session.topic_name, session.language)
     created_session = db.get_session_by_id(session_id)
 
     return SessionResponse(

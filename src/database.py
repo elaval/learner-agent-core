@@ -39,6 +39,7 @@ def init_database() -> None:
         CREATE TABLE IF NOT EXISTS sessions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             topic_name TEXT NOT NULL,
+            language TEXT DEFAULT 'en',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             completed_at TIMESTAMP,
             total_turns INTEGER DEFAULT 0,
@@ -50,6 +51,14 @@ def init_database() -> None:
         )
     """)
 
+    # Add language column if it doesn't exist (migration for existing databases)
+    try:
+        cursor.execute("ALTER TABLE sessions ADD COLUMN language TEXT DEFAULT 'en'")
+        conn.commit()
+    except sqlite3.OperationalError:
+        # Column already exists
+        pass
+
     # Create index for topic searches
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_sessions_topic ON sessions(topic_name)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_sessions_created ON sessions(created_at)")
@@ -60,12 +69,13 @@ def init_database() -> None:
 
 # ===== SESSION CRUD =====
 
-def create_session(topic_name: str) -> int:
+def create_session(topic_name: str, language: str = "en") -> int:
     """
     Create a new teaching session.
 
     Args:
         topic_name: Free-form topic name (e.g., "My Hometown")
+        language: Language code ('en' or 'es')
 
     Returns:
         Session ID
@@ -74,9 +84,9 @@ def create_session(topic_name: str) -> int:
     cursor = conn.cursor()
 
     cursor.execute("""
-        INSERT INTO sessions (topic_name)
-        VALUES (?)
-    """, (topic_name,))
+        INSERT INTO sessions (topic_name, language)
+        VALUES (?, ?)
+    """, (topic_name, language))
 
     session_id = cursor.lastrowid
     conn.commit()
